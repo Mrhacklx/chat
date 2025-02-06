@@ -7,6 +7,7 @@ from telegram.ext import filters  # Correct import for Filters
 from flask import Flask, request
 from pymongo import MongoClient
 from dotenv import load_dotenv
+import asyncio
 
 # Load environment variables
 load_dotenv()
@@ -166,5 +167,6 @@ async def main():
     # Start the bot
     await application.run_polling()
 
+# Run the bot in an event loop
 if __name__ == '__main__':
-    main()
+    asyncio.run(main())
