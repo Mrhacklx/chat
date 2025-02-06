@@ -16,7 +16,7 @@ db = client['telegram_bot']
 user_collection = db['users']
 
 # Telegram bot token from environment variables
-TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
+TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN",'7135125725:AAE2zNrhbUX-ZQfcJX0_mo38-cMppP9iXSQ')
 
 # Set up logging
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
