@@ -1,13 +1,13 @@
 import logging
-from telegram import Update
-from telegram.ext import Application, CommandHandler, CallbackContext
-from pymongo import MongoClient
 import os
 import socket
 import threading
+from telegram import Update
+from telegram.ext import Application, CommandHandler, CallbackContext
+from pymongo import MongoClient
 from dotenv import load_dotenv
 
-# Load environment variables
+# Load environment variables from .env file
 load_dotenv()
 
 # MongoDB setup
@@ -23,7 +23,7 @@ logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s
                     level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Add a new user to the MongoDB database
+# Function to add a new user to MongoDB
 def add_user(user_id, username):
     user_collection.update_one(
         {'user_id': user_id},
@@ -31,18 +31,18 @@ def add_user(user_id, username):
         upsert=True
     )
 
-# Start command
+# /start command handler
 async def start(update: Update, context: CallbackContext) -> None:
     user_id = update.message.from_user.id
     username = update.message.from_user.username
     add_user(user_id, username)
     await update.message.reply_text(f"Hello {username}, welcome to the bot!")
 
-# Help command
+# /help command handler
 async def help_command(update: Update, context: CallbackContext) -> None:
     await update.message.reply_text('Use /start to start the bot!')
 
-# Broadcast command (only for admin)
+# /broadcast command handler (only for admin)
 async def broadcast(update: Update, context: CallbackContext) -> None:
     # Ensure the user is the admin
     admin_id = os.getenv("ADMIN_ID")
@@ -62,7 +62,7 @@ async def broadcast(update: Update, context: CallbackContext) -> None:
 # Simple TCP Health Check Server
 def health_check_server():
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        s.bind(('0.0.0.0', 8000))
+        s.bind(('0.0.0.0', 8000))  # Bind to all available interfaces on port 8000
         s.listen(1)
         print("Health check server listening on port 8000...")
         while True:
@@ -71,8 +71,19 @@ def health_check_server():
                 print('Health check received from', addr)
                 conn.sendall(b"OK")
 
-# Main function to handle bot and commands
+# MongoDB Connection Test (Optional: Check if the MongoDB connection is working)
+def test_mongo_connection():
+    try:
+        client.admin.command('ping')
+        print("MongoDB connection successful")
+    except Exception as e:
+        print(f"Error connecting to MongoDB: {e}")
+
+# Main function to run the bot and the health check server
 def main():
+    # Test MongoDB connection (optional)
+    test_mongo_connection()
+
     # Start the health check server in a separate thread
     health_thread = threading.Thread(target=health_check_server)
     health_thread.daemon = True
