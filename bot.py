@@ -1,9 +1,11 @@
 import logging
 from telegram import Update
-from telegram.ext import Application, CommandHandler, MessageHandler, filters, CallbackContext
+from telegram.ext import Application, CommandHandler, CallbackContext
 from pymongo import MongoClient
-from dotenv import load_dotenv
 import os
+from flask import Flask
+from threading import Thread
+from dotenv import load_dotenv
 
 # Load environment variables
 load_dotenv()
@@ -57,8 +59,23 @@ async def broadcast(update: Update, context: CallbackContext) -> None:
     else:
         await update.message.reply_text("You are not authorized to broadcast.")
 
+# Basic Flask server to respond to health checks
+app = Flask(__name__)
+
+@app.route("/health")
+def health():
+    return "OK", 200
+
+def run_flask():
+    app.run(host="0.0.0.0", port=8000)
+
 # Main function to handle bot and commands
 def main():
+    # Start the Flask server in a separate thread
+    thread = Thread(target=run_flask)
+    thread.daemon = True
+    thread.start()
+
     # Create an Application object
     application = Application.builder().token(TELEGRAM_TOKEN).build()
 
