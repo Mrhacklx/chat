@@ -1,6 +1,6 @@
 import logging
 from telegram import Update
-from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext
+from telegram.ext import Application, CommandHandler, MessageHandler, filters, CallbackContext
 from pymongo import MongoClient
 from dotenv import load_dotenv
 import os
@@ -30,47 +30,42 @@ def add_user(user_id, username):
     )
 
 # Start command
-def start(update: Update, context: CallbackContext) -> None:
+async def start(update: Update, context: CallbackContext) -> None:
     user_id = update.message.from_user.id
     username = update.message.from_user.username
     add_user(user_id, username)
-    update.message.reply_text(f"Hello {username}, welcome to the bot!")
+    await update.message.reply_text(f"Hello {username}, welcome to the bot!")
 
 # Help command
-def help_command(update: Update, context: CallbackContext) -> None:
-    update.message.reply_text('Use /start to start the bot!')
+async def help_command(update: Update, context: CallbackContext) -> None:
+    await update.message.reply_text('Use /start to start the bot!')
 
 # Broadcast command (only for admin)
-def broadcast(update: Update, context: CallbackContext) -> None:
+async def broadcast(update: Update, context: CallbackContext) -> None:
     # Ensure the user is the admin
     admin_id = os.getenv("ADMIN_ID")
     if str(update.message.from_user.id) == admin_id:
         message = ' '.join(context.args)
         users = user_collection.find()
         for user in users:
-            context.bot.send_message(chat_id=user['user_id'], text=message)
-        update.message.reply_text("Message broadcasted!")
+            await context.bot.send_message(chat_id=user['user_id'], text=message)
+        await update.message.reply_text("Message broadcasted!")
     else:
-        update.message.reply_text("You are not authorized to broadcast.")
+        await update.message.reply_text("You are not authorized to broadcast.")
 
 # Main function to handle bot and commands
-def main():
-    # Create an Updater object
-    updater = Updater(TELEGRAM_TOKEN)
-
-    # Get the dispatcher to register handlers
-    dispatcher = updater.dispatcher
+async def main():
+    # Create an Application object
+    application = Application.builder().token(TELEGRAM_TOKEN).build()
 
     # Add command handlers
-    dispatcher.add_handler(CommandHandler("start", start))
-    dispatcher.add_handler(CommandHandler("help", help_command))
-    dispatcher.add_handler(CommandHandler("broadcast", broadcast, pass_args=True))
+    application.add_handler(CommandHandler("start", start))
+    application.add_handler(CommandHandler("help", help_command))
+    application.add_handler(CommandHandler("broadcast", broadcast, filters=filters.Args))
 
     # Start polling for updates from Telegram
-    updater.start_polling()
-
-    # Run the bot until you send a signal to stop
-    updater.idle()
+    await application.run_polling()
 
 if __name__ == '__main__':
-    main()
+    import asyncio
+    asyncio.run(main())
