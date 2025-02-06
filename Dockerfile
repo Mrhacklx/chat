@@ -10,5 +10,8 @@ COPY . .
 # Install dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Run bot.py when the container launches
+# Expose the port for the webhook server (optional if using Flask with webhooks)
+EXPOSE 3000
+
+# Run the Flask app and Telegram bot when the container launches
 CMD ["python", "bot.py"]
