@@ -45,7 +45,11 @@ async def broadcast(update: Update, context: CallbackContext) -> None:
     # Ensure the user is the admin
     admin_id = os.getenv("ADMIN_ID")
     if str(update.message.from_user.id) == admin_id:
-        message = ' '.join(context.args)
+        message = ' '.join(context.args)  # Capture arguments passed to /broadcast
+        if not message:
+            await update.message.reply_text("Please provide a message to broadcast.")
+            return
+
         users = user_collection.find()
         for user in users:
             await context.bot.send_message(chat_id=user['user_id'], text=message)
@@ -61,7 +65,7 @@ async def main():
     # Add command handlers
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("help", help_command))
-    application.add_handler(CommandHandler("broadcast", broadcast, filters=filters.Args))
+    application.add_handler(CommandHandler("broadcast", broadcast))
 
     # Start polling for updates from Telegram
     await application.run_polling()
