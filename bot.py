@@ -3,7 +3,7 @@ import json
 import requests
 from telegram import Update
 from telegram.ext import Updater, CommandHandler, MessageHandler, CallbackContext
-from telegram.ext.filters import Filters  # Updated import
+from telegram.ext import filters  # Updated import path
 from flask import Flask, request
 from pymongo import MongoClient
 from dotenv import load_dotenv
@@ -158,7 +158,7 @@ def main():
     dispatcher.add_handler(CommandHandler("help", help_command))
     dispatcher.add_handler(CommandHandler("commands", commands))
     dispatcher.add_handler(CommandHandler("view", view))
-    dispatcher.add_handler(MessageHandler(Filters.text | Filters.photo | Filters.document | Filters.video, handle_media_message))
+    dispatcher.add_handler(MessageHandler(filters.TEXT | filters.PHOTO | filters.DOCUMENT | filters.VIDEO, handle_media_message))
 
     # Webhook setup for production
     bot = updater.bot
