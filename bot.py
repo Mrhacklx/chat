@@ -1,11 +1,10 @@
-# Remove asyncio.run(main()) and directly call main()
-
+import asyncio
 import os
 import json
 import requests
 from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, CallbackContext
-from telegram.ext import filters  # Correct import for Filters
+from telegram.ext import filters
 from flask import Flask, request
 from pymongo import MongoClient
 from dotenv import load_dotenv
@@ -168,6 +167,11 @@ async def main():
     # Start the bot
     await application.run_polling()
 
-# Run the bot (without asyncio.run in environments where event loops already run)
+# Run the bot, ensuring that asyncio.run is used when necessary
 if __name__ == '__main__':
-    main()  # Call the main function without asyncio.run()
+    # Ensure main() is awaited correctly if no event loop is running
+    try:
+        asyncio.run(main())  # This is for environments that don't manage event loops
+    except RuntimeError:
+        # In case we're already in an event loop (e.g., cloud environment)
+        pass
