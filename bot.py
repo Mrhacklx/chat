@@ -1,3 +1,5 @@
+# Remove asyncio.run(main()) and directly call main()
+
 import os
 import json
 import requests
@@ -7,7 +9,6 @@ from telegram.ext import filters  # Correct import for Filters
 from flask import Flask, request
 from pymongo import MongoClient
 from dotenv import load_dotenv
-import asyncio
 
 # Load environment variables
 load_dotenv()
@@ -162,11 +163,11 @@ async def main():
 
     # Webhook setup for production
     bot = application.bot
-    bot.set_webhook(url=f"https://{os.getenv('WEBHOOK_URL')}/webhook")
+    await bot.set_webhook(url=f"https://{os.getenv('WEBHOOK_URL')}/webhook")
 
     # Start the bot
     await application.run_polling()
 
-# Run the bot in an event loop
+# Run the bot (without asyncio.run in environments where event loops already run)
 if __name__ == '__main__':
-    asyncio.run(main())
+    main()  # Call the main function without asyncio.run()
