@@ -6,7 +6,7 @@ from flask import Flask, request
 from pymongo import MongoClient
 from dotenv import load_dotenv
 import requests
- 
+
 # Load environment variables
 load_dotenv()
 
