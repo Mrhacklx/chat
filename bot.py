@@ -1,157 +1,80 @@
 import os
+import logging
 import asyncio
 from telegram import Update
-from telegram.ext import Application, CommandHandler, CallbackContext, MessageHandler, filters
-from pymongo import MongoClient
-from dotenv import load_dotenv
-import requests
-import re
+from telegram.ext import Application, CommandHandler, MessageHandler, filters
 
-# Load environment variables
-load_dotenv()
+# Enable logging for better debugging
+logging.basicConfig(format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+                    level=logging.INFO)
+logger = logging.getLogger(__name__)
 
-# MongoDB setup
-client = MongoClient(os.getenv("MONGO_URI"))  # Mongo URI from environment variables
-db = client['telegram_bot']  # Database name
-user_collection = db['users']  # Collection for storing user data
+# Define the start command handler
+async def start(update: Update, context):
+    await update.message.reply_text('Hello! Welcome to the bot.')
 
-# Function to save user data to MongoDB
-def save_user_data(user_id, api_key):
-    user_collection.update_one(
-        {'user_id': user_id},
-        {'$set': {'user_id': user_id, 'api_key': api_key}},
-        upsert=True
-    )
+# Define the connect command handler
+async def connect(update: Update, context):
+    await update.message.reply_text('Connecting...')
 
-# Function to retrieve user data from MongoDB
-def get_user_data(user_id):
-    user = user_collection.find_one({'user_id': user_id})
-    return user
+# Define the disconnect command handler
+async def disconnect(update: Update, context):
+    await update.message.reply_text('Disconnecting...')
 
-# Validate API key
-def validate_api_key(api_key):
-    try:
-        test_url = "https://example.com"  # Replace with a valid URL for testing
-        api_url = f"https://bisgram.com/api?api={api_key}&url={test_url}"
-        response = requests.get(api_url)
-        return response.json().get('status') == 'success'
-    except Exception as e:
-        print("Error validating API key:", e)
-        return False
+# Define the help command handler
+async def help_command(update: Update, context):
+    help_text = """
+    Here are some commands you can use:
+    /start - Start the bot
+    /connect - Connect
+    /disconnect - Disconnect
+    /help - Get help
+    /commands - List all commands
+    /view - View your status
+    """
+    await update.message.reply_text(help_text)
 
-# Define /start command handler
-async def start(update: Update, context: CallbackContext):
-    user_id = update.message.from_user.id
-    user = get_user_data(user_id)
-    
-    if user:
-        await update.message.reply_text(f"📮 Hello {update.message.from_user.first_name}, \nYou are now successfully connected to our Terabis platform.\n\nSend a Tearbox link for converting.")
+# Define the commands command handler
+async def commands(update: Update, context):
+    await update.message.reply_text('Here is a list of available commands: /start, /connect, /disconnect, /help')
+
+# Define the view command handler
+async def view(update: Update, context):
+    await update.message.reply_text('Viewing your status...')
+
+# Define the message handler for media messages
+async def handle_media_message(update: Update, context):
+    # Handle media messages, for example:
+    if update.message.photo:
+        await update.message.reply_text("Nice photo!")
     else:
-        await update.message.reply_text(f"📮 Hello {update.message.from_user.first_name},\n\n🌟 I am a bot to Convert Your Terabox link to Your Links Directly to your Bisgram.com Account.\n\nYou can login to your account by clicking on the button below, and entering your API key.\n\n💠 You can find your API key on https://bisgram.com/member/tools/api\n\nℹ Send me /help to get the guide.\n\n🎬 Check out the tutorial video: https://t.me/terabis/9")
+        await update.message.reply_text("Sorry, I can only handle photo messages for now.")
 
-# Define /connect command handler
-async def connect(update: Update, context: CallbackContext):
-    if len(context.args) < 1:
-        await update.message.reply_text("Please provide your API key. Example: /connect YOUR_API_KEY")
-        return
-
-    api_key = context.args[0]
-    user_id = update.message.from_user.id
-
-    if validate_api_key(api_key):
-        save_user_data(user_id, api_key)
-        await update.message.reply_text("✅ API key connected successfully! Send a Tearbox link for converting.")
-    else:
-        await update.message.reply_text("❌ Invalid API key. Please try again.\n\nHow to connect /help")
-
-# Define /disconnect command handler
-async def disconnect(update: Update, context: CallbackContext):
-    user_id = update.message.from_user.id
-
-    if get_user_data(user_id):
-        user_collection.delete_one({'user_id': user_id})
-        await update.message.reply_text("✅ Your API key has been disconnected successfully.")
-    else:
-        await update.message.reply_text("⚠️ You have not connected an API key yet.")
-
-# Define /help command handler
-async def help_command(update: Update, context: CallbackContext):
-    await update.message.reply_text(
-        """
-How to Connect:
-1. Go to Bisgram.com
-2. Create an Account
-3. Click on the menu bar (top left side)
-4. Click on *Tools > Developer API*
-5. Copy the API token
-6. Use this command: /connect YOUR_API_KEY
-   Example: /connect 8268d7f25na2c690bk25d4k20fbc63p5p09d6906
-
-🎬 Check out the tutorial video: 
-   https://t.me/terabis/9
-
-For any confusion or help, contact @ayushx2026_bot
-        """
-    )
-
-# Define /commands handler
-async def commands(update: Update, context: CallbackContext):
-    await update.message.reply_text(
-        """
-🤖 *Link Shortener Bot Commands:*
-- /connect [API_KEY] - Connect your API key.
-- /disconnect - Disconnect your API key.
-- /view - View your connected API key.
-- /help - How to connect to website.
-        """, parse_mode="Markdown"
-    )
-
-# Define /view command handler
-async def view(update: Update, context: CallbackContext):
-    user_id = update.message.from_user.id
-    user = get_user_data(user_id)
-    
-    if user and 'api_key' in user:
-        await update.message.reply_text(f"✅ Your connected API key: `{user['api_key']}`", parse_mode="Markdown")
-    else:
-        await update.message.reply_text("⚠️ No API key is connected. Use /connect to link one.")
-
-# Define function to handle incoming media messages
-async def handle_media_message(update: Update, context: CallbackContext):
-    message_text = update.message.caption or update.message.text or ""
-
-    # Regex to extract URLs
-    link_regex = r"(https?:\/\/[^\s]+)"
-    links = re.findall(link_regex, message_text)
-
-    if links and any("tera" in link and "/s/" in link for link in links):
-        extracted_link = next(link for link in links if "tera" in link and "/s/" in link)
-        long_url = extracted_link.replace("/s/", "https://terabis.blogspot.com/?url=")
-
-        # Further processing like shortening the link, handling the media, etc.
-        # This part is similar to the JavaScript logic for shortening links and sending the response
-
-    else:
-        await update.message.reply_text("Please send a valid Terabox link.")
-
-# Main async function to start the bot
+# Main function to set up and run the bot
 async def main():
-    # Initialize the bot with token from environment variable
+    # Create the Application instance using your bot's token
     application = Application.builder().token(os.getenv("BOT_TOKEN")).build()
 
-    # Add command handlers
+    # Add handlers for different commands
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("connect", connect))
     application.add_handler(CommandHandler("disconnect", disconnect))
     application.add_handler(CommandHandler("help", help_command))
     application.add_handler(CommandHandler("commands", commands))
     application.add_handler(CommandHandler("view", view))
-    application.add_handler(MessageHandler(filters.TEXT, handle_media_message))  # Correct filter import
+    application.add_handler(MessageHandler(filters.TEXT, handle_media_message))  # Handling text messages
 
-    # Start the bot polling
-    await application.run_polling()
+    try:
+        # Initialize the bot and start the polling loop
+        await application.initialize()  # Ensure that initialization is properly awaited
+        await application.run_polling()  # Start polling for messages
+    except Exception as e:
+        logger.error(f"An error occurred: {e}")
+    finally:
+        # Shutdown the application gracefully
+        await application.shutdown()  # Ensure the application shuts down properly
 
-# Run the bot with asyncio
+# If running as the main script
 if __name__ == '__main__':
     try:
         asyncio.run(main())  # This is for environments that don't manage event loops
