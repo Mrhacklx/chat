@@ -1,11 +1,11 @@
 import os
 import asyncio
 from telegram import Update
-from telegram.ext import Application, CommandHandler, CallbackContext, MessageHandler, filters
-from flask import Flask, request
+from telegram.ext import Application, CommandHandler, CallbackContext
 from pymongo import MongoClient
 from dotenv import load_dotenv
 import requests
+import re
 
 # Load environment variables
 load_dotenv()
@@ -134,17 +134,7 @@ async def handle_media_message(update: Update, context: CallbackContext):
     else:
         await update.message.reply_text("Please send a valid Terabox link.")
 
-# Define Flask app for webhook
-app = Flask(__name__)
-
-@app.route('/webhook', methods=['POST'])
-def webhook():
-    json_str = request.get_data(as_text=True)
-    update = Update.de_json(json_str, bot)
-    dispatcher.process_update(update)
-    return 'OK'
-
-# Set up the bot and dispatcher
+# Main async function to start the bot
 async def main():
     # Initialize the bot with token from environment variable
     application = Application.builder().token(os.getenv("BOT_TOKEN")).build()
@@ -158,16 +148,10 @@ async def main():
     application.add_handler(CommandHandler("view", view))
     application.add_handler(MessageHandler(filters.TEXT, handle_media_message))  # Correct filter import
 
-    # Webhook setup for production
-    bot = application.bot
-    await bot.set_webhook(url=f"https://{os.getenv('WEBHOOK_URL')}/webhook")
+    # Start the bot polling
+    await application.run_polling()
 
-    # Use `async with` to properly handle bot lifecycle
-    async with application:
-        # Start the bot
-        await application.run_polling()
-
-# Run the bot, ensuring that asyncio.run is used when necessary
+# Run the bot with asyncio
 if __name__ == '__main__':
     try:
         asyncio.run(main())  # This is for environments that don't manage event loops
