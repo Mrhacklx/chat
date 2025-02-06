@@ -1,82 +1,93 @@
-import os
 import logging
-import asyncio
 from telegram import Update
-from telegram.ext import Application, CommandHandler, MessageHandler, filters
+from telegram.ext import Application, CommandHandler, CallbackContext
+from pymongo import MongoClient
+import os
+import socket
+import threading
+from dotenv import load_dotenv
 
-# Enable logging for better debugging
-logging.basicConfig(format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+# Load environment variables
+load_dotenv()
+
+# MongoDB setup
+client = MongoClient(os.getenv("MONGO_URI"))
+db = client['telegram_bot']
+user_collection = db['users']
+
+# Telegram bot token from environment variables
+TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
+
+# Set up logging
+logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                     level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Define the start command handler
-async def start(update: Update, context):
-    await update.message.reply_text('Hello! Welcome to the bot.')
+# Add a new user to the MongoDB database
+def add_user(user_id, username):
+    user_collection.update_one(
+        {'user_id': user_id},
+        {'$set': {'user_id': user_id, 'username': username}},
+        upsert=True
+    )
 
-# Define the connect command handler
-async def connect(update: Update, context):
-    await update.message.reply_text('Connecting...')
+# Start command
+async def start(update: Update, context: CallbackContext) -> None:
+    user_id = update.message.from_user.id
+    username = update.message.from_user.username
+    add_user(user_id, username)
+    await update.message.reply_text(f"Hello {username}, welcome to the bot!")
 
-# Define the disconnect command handler
-async def disconnect(update: Update, context):
-    await update.message.reply_text('Disconnecting...')
+# Help command
+async def help_command(update: Update, context: CallbackContext) -> None:
+    await update.message.reply_text('Use /start to start the bot!')
 
-# Define the help command handler
-async def help_command(update: Update, context):
-    help_text = """
-    Here are some commands you can use:
-    /start - Start the bot
-    /connect - Connect
-    /disconnect - Disconnect
-    /help - Get help
-    /commands - List all commands
-    /view - View your status
-    """
-    await update.message.reply_text(help_text)
+# Broadcast command (only for admin)
+async def broadcast(update: Update, context: CallbackContext) -> None:
+    # Ensure the user is the admin
+    admin_id = os.getenv("ADMIN_ID")
+    if str(update.message.from_user.id) == admin_id:
+        message = ' '.join(context.args)  # Capture arguments passed to /broadcast
+        if not message:
+            await update.message.reply_text("Please provide a message to broadcast.")
+            return
 
-# Define the commands command handler
-async def commands(update: Update, context):
-    await update.message.reply_text('Here is a list of available commands: /start, /connect, /disconnect, /help')
-
-# Define the view command handler
-async def view(update: Update, context):
-    await update.message.reply_text('Viewing your status...')
-
-# Define the message handler for media messages
-async def handle_media_message(update: Update, context):
-    # Handle media messages, for example:
-    if update.message.photo:
-        await update.message.reply_text("Nice photo!")
+        users = user_collection.find()
+        for user in users:
+            await context.bot.send_message(chat_id=user['user_id'], text=message)
+        await update.message.reply_text("Message broadcasted!")
     else:
-        await update.message.reply_text("Sorry, I can only handle photo messages for now.")
+        await update.message.reply_text("You are not authorized to broadcast.")
 
-# Main function to set up and run the bot
-async def main():
-    # Create the Application instance using your bot's token
-    application = Application.builder().token(os.getenv("BOT_TOKEN")).build()
+# Simple TCP Health Check Server
+def health_check_server():
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.bind(('0.0.0.0', 8000))
+        s.listen(1)
+        print("Health check server listening on port 8000...")
+        while True:
+            conn, addr = s.accept()
+            with conn:
+                print('Health check received from', addr)
+                conn.sendall(b"OK")
 
-    # Add handlers for different commands
+# Main function to handle bot and commands
+def main():
+    # Start the health check server in a separate thread
+    health_thread = threading.Thread(target=health_check_server)
+    health_thread.daemon = True
+    health_thread.start()
+
+    # Create an Application object
+    application = Application.builder().token(TELEGRAM_TOKEN).build()
+
+    # Add command handlers
     application.add_handler(CommandHandler("start", start))
-    application.add_handler(CommandHandler("connect", connect))
-    application.add_handler(CommandHandler("disconnect", disconnect))
     application.add_handler(CommandHandler("help", help_command))
-    application.add_handler(CommandHandler("commands", commands))
-    application.add_handler(CommandHandler("view", view))
-    application.add_handler(MessageHandler(filters.TEXT, handle_media_message))  # Handling text messages
+    application.add_handler(CommandHandler("broadcast", broadcast))
 
-    try:
-        # Initialize the bot and start the polling loop
-        await application.initialize()  # Ensure that initialization is properly awaited
-        await application.run_polling()  # Start polling for messages
-    except Exception as e:
-        logger.error(f"An error occurred: {e}")
-    finally:
-        # Shutdown the application gracefully
-        await application.shutdown()  # Ensure the application shuts down properly
+    # Start polling for updates from Telegram
+    application.run_polling()
 
-# If running as the main script
 if __name__ == '__main__':
-    try:
-        asyncio.run(main())  # This is for environments that don't manage event loops
-    except RuntimeError:
-        pass  # In case we're already in an event loop (e.g., cloud environment)
+    main()
