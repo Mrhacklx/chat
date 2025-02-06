@@ -162,8 +162,10 @@ async def main():
     bot = application.bot
     await bot.set_webhook(url=f"https://{os.getenv('WEBHOOK_URL')}/webhook")
 
-    # Start the bot
-    await application.run_polling()
+    # Use `async with` to properly handle bot lifecycle
+    async with application:
+        # Start the bot
+        await application.run_polling()
 
 # Run the bot, ensuring that asyncio.run is used when necessary
 if __name__ == '__main__':
