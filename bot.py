@@ -1,7 +1,7 @@
 import os
 import asyncio
 from telegram import Update
-from telegram.ext import Application, CommandHandler, CallbackContext
+from telegram.ext import Application, CommandHandler, CallbackContext, MessageHandler, filters
 from pymongo import MongoClient
 from dotenv import load_dotenv
 import requests
