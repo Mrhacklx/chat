@@ -58,7 +58,7 @@ async def broadcast(update: Update, context: CallbackContext) -> None:
         await update.message.reply_text("You are not authorized to broadcast.")
 
 # Main function to handle bot and commands
-async def main():
+def main():
     # Create an Application object
     application = Application.builder().token(TELEGRAM_TOKEN).build()
 
@@ -68,8 +68,7 @@ async def main():
     application.add_handler(CommandHandler("broadcast", broadcast))
 
     # Start polling for updates from Telegram
-    await application.run_polling()
+    application.run_polling()
 
 if __name__ == '__main__':
-    import asyncio
-    asyncio.run(main())
+    main()
