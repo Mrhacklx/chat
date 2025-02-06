@@ -13,9 +13,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy the rest of the application code into the container
 COPY bot.py /app/
 
-# Set the environment variable for the Telegram bot token (optional, you can also set this in .env)
-# ENV TELEGRAM_TOKEN=your_telegram_token_here
-
 # Expose the health check port (8000)
 EXPOSE 8000
 
