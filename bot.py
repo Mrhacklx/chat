@@ -167,9 +167,7 @@ async def main():
 
 # Run the bot, ensuring that asyncio.run is used when necessary
 if __name__ == '__main__':
-    # Ensure main() is awaited correctly if no event loop is running
     try:
         asyncio.run(main())  # This is for environments that don't manage event loops
     except RuntimeError:
-        # In case we're already in an event loop (e.g., cloud environment)
-        pass
+        pass  # In case we're already in an event loop (e.g., cloud environment)
