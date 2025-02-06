@@ -3,8 +3,8 @@ from telegram import Update
 from telegram.ext import Application, CommandHandler, CallbackContext
 from pymongo import MongoClient
 import os
-from flask import Flask
-from threading import Thread
+import socket
+import threading
 from dotenv import load_dotenv
 
 # Load environment variables
@@ -59,22 +59,24 @@ async def broadcast(update: Update, context: CallbackContext) -> None:
     else:
         await update.message.reply_text("You are not authorized to broadcast.")
 
-# Basic Flask server to respond to health checks
-app = Flask(__name__)
-
-@app.route("/health")
-def health():
-    return "OK", 200
-
-def run_flask():
-    app.run(host="0.0.0.0", port=8000)
+# Simple TCP Health Check Server
+def health_check_server():
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.bind(('0.0.0.0', 8000))
+        s.listen(1)
+        print("Health check server listening on port 8000...")
+        while True:
+            conn, addr = s.accept()
+            with conn:
+                print('Health check received from', addr)
+                conn.sendall(b"OK")
 
 # Main function to handle bot and commands
 def main():
-    # Start the Flask server in a separate thread
-    thread = Thread(target=run_flask)
-    thread.daemon = True
-    thread.start()
+    # Start the health check server in a separate thread
+    health_thread = threading.Thread(target=health_check_server)
+    health_thread.daemon = True
+    health_thread.start()
 
     # Create an Application object
     application = Application.builder().token(TELEGRAM_TOKEN).build()
