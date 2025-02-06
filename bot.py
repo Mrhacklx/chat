@@ -2,11 +2,11 @@ import os
 import json
 import requests
 from telegram import Update
-from telegram.ext import Application, CommandHandler, MessageHandler, Filters, CallbackContext
+from telegram.ext import Application, CommandHandler, MessageHandler, CallbackContext
+from telegram.ext import filters  # Correct import for Filters
 from flask import Flask, request
 from pymongo import MongoClient
 from dotenv import load_dotenv
-import re
 
 # Load environment variables
 load_dotenv()
@@ -44,7 +44,7 @@ def validate_api_key(api_key):
 async def start(update: Update, context: CallbackContext):
     user_id = update.message.from_user.id
     user = get_user_data(user_id)
-
+    
     if user:
         await update.message.reply_text(f"📮 Hello {update.message.from_user.first_name}, \nYou are now successfully connected to our Terabis platform.\n\nSend a Tearbox link for converting.")
     else:
@@ -111,7 +111,7 @@ async def commands(update: Update, context: CallbackContext):
 async def view(update: Update, context: CallbackContext):
     user_id = update.message.from_user.id
     user = get_user_data(user_id)
-
+    
     if user and 'api_key' in user:
         await update.message.reply_text(f"✅ Your connected API key: `{user['api_key']}`", parse_mode="Markdown")
     else:
@@ -157,14 +157,14 @@ async def main():
     application.add_handler(CommandHandler("help", help_command))
     application.add_handler(CommandHandler("commands", commands))
     application.add_handler(CommandHandler("view", view))
-    application.add_handler(MessageHandler(Filters.text | Filters.photo | Filters.document | Filters.video, handle_media_message))
+    application.add_handler(MessageHandler(filters.TEXT, handle_media_message))  # Correct filter import
 
     # Webhook setup for production
     bot = application.bot
     bot.set_webhook(url=f"https://{os.getenv('WEBHOOK_URL')}/webhook")
 
-    # Start Flask app for webhook
-    app.run(host='0.0.0.0', port=int(os.getenv('PORT', 3000)))
+    # Start the bot
+    await application.run_polling()
 
 if __name__ == '__main__':
     main()
