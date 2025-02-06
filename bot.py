@@ -1,13 +1,11 @@
-import asyncio
 import os
-import json
-import requests
+import asyncio
 from telegram import Update
-from telegram.ext import Application, CommandHandler, MessageHandler, CallbackContext
-from telegram.ext import filters
+from telegram.ext import Application, CommandHandler, CallbackContext, MessageHandler, filters
 from flask import Flask, request
 from pymongo import MongoClient
 from dotenv import load_dotenv
+import requests
 
 # Load environment variables
 load_dotenv()
