@@ -1,17 +1,23 @@
-# Use an official Python runtime as a parent image
+# Use Python's official image as a base
 FROM python:3.9-slim
 
-# Set the working directory
+# Set working directory inside the container
 WORKDIR /app
 
-# Copy the current directory contents into the container
-COPY . .
+# Copy the requirements.txt into the container
+COPY requirements.txt /app/
 
-# Install dependencies
+# Install the dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Expose port for Flask
-EXPOSE 3000
+# Copy the rest of the application code into the container
+COPY bot.py /app/
 
-# Run bot.py when the container launches
+# Set the environment variable for the Telegram bot token (optional, you can also set this in .env)
+# ENV TELEGRAM_TOKEN=your_telegram_token_here
+
+# Expose the health check port (8000)
+EXPOSE 8000
+
+# Command to run the bot
 CMD ["python", "bot.py"]
