@@ -47,9 +47,9 @@ async def start(update: Update, context: CallbackContext) -> None:
     user = api_collection.find_one({"user_id": user_id})
     
     if user:
-        await update.message.reply(f"📮 Hello {update.message.from_user.first_name}, \nYou are now successfully connected to our Terabis platform.\n\nSend Terabox link for converting")
+        await update.message.reply_text(f"📮 Hello {update.message.from_user.first_name}, \nYou are now successfully connected to our Terabis platform.\n\nSend Terabox link for converting")
     else:
-        await update.message.reply(
+        await update.message.reply_text(
             f"📮 Hello {update.message.from_user.first_name},\n\n"
             f"🌟 I am a bot to Convert Your Terabox link to Your Links Directly to your Bisgram.com Account.\n\n"
             f"You can login to your account by clicking on the button below, and entering your api key.\n\n"
@@ -60,7 +60,7 @@ async def start(update: Update, context: CallbackContext) -> None:
 
 # /help command handler
 async def help_command(update: Update, context: CallbackContext) -> None:
-    await update.message.reply(
+    await update.message.reply_text(
         "How to Connect:\n"
         "1. Go to Bisgram.com\n"
         "2. Create an Account\n"
@@ -114,13 +114,13 @@ async def disconnect(update: Update, context: CallbackContext):
     user = api_collection.find_one({"user_id": user_id})
     if user:
         api_collection.delete_one({"user_id": user_id})
-        update.message.reply("✅ Your API key has been disconnected successfully.")
+        update.message.reply_text("✅ Your API key has been disconnected successfully.")
     else:
-        update.message.reply("⚠️ You have not connected an API key yet.")
+        update.message.reply_text("⚠️ You have not connected an API key yet.")
 
 # Command: /commands
 async def commands(update: Update, context: CallbackContext):
-    update.message.reply(
+    update.message.reply_text(
         "🤖 *Link Shortener Bot Commands:*\n"
         "- /connect [API_KEY] - Connect your API key.\n"
         "- /disconnect - Disconnect your API key.\n"
@@ -133,9 +133,9 @@ async def view(update: Update, context: CallbackContext):
     user_id = update.message.from_user.id
     user = api_collection.find_one({"user_id": user_id})
     if user and "user_api)" in user:
-        update.message.reply(f"✅ Your connected API key: {user['user_api']}", parse_mode='Markdown')
+        update.message.reply_text(f"✅ Your connected API key: {user['user_api']}", parse_mode='Markdown')
     else:
-        update.message.reply("⚠️ No API key is connected. Use /connect to link one.")
+        update.message.reply_text("⚠️ No API key is connected. Use /connect to link one.")
 
 # Simple TCP Health Check Server
 def health_check_server():
