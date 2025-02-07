@@ -2,6 +2,7 @@ import logging
 import os
 import socket
 import threading
+import requests
 from telegram import Update
 from telegram.ext import Application, CommandHandler, CallbackContext
 from pymongo import MongoClient
@@ -16,6 +17,10 @@ db = client['telegram_bot']
 user_collection = db['users']
 api_collection = db['api_id']
 
+# MongoDB Indexes
+user_collection.create_index([('user_id', 1)], unique=True)
+api_collection.create_index([('user_id', 1)], unique=True)
+
 # Telegram bot token from environment variables
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
 
@@ -24,21 +29,33 @@ logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s
                     level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# Helper function to check if user is admin
+def is_admin(user_id):
+    return str(user_id) == os.getenv("ADMIN_ID")
+
 # Function to add a new user to MongoDB
 def add_user(user_id, username):
-    user_collection.update_one(
-        {'user_id': user_id},
-        {'$set': {'user_id': user_id, 'username': username}},
-        upsert=True
-    )
+    try:
+        user_collection.update_one(
+            {'user_id': user_id},
+            {'$set': {'user_id': user_id, 'username': username}},
+            upsert=True
+        )
+    except Exception as e:
+        logger.error(f"Error adding user: {e}")
+
 # Function to add user and API to MongoDB
 def add_user_api(user_id, api_id):
-    api_collection.update_one(
-        {'user_id': user_id},
-        {'$set': {'user_id': user_id, 'api_id': api_id}},
-        upsert=True
-    )
+    try:
+        api_collection.update_one(
+            {'user_id': user_id},
+            {'$set': {'user_id': user_id, 'api_id': api_id}},
+            upsert=True
+        )
+    except Exception as e:
+        logger.error(f"Error adding user API: {e}")
 
+# Validate API ID
 async def validate_api_id(api_id):
     try:
         test_url = "https://example.com"  # Replace with a valid URL for testing
@@ -48,7 +65,7 @@ async def validate_api_id(api_id):
             return True
         return False
     except Exception as error:
-        print(f"Error validating API key: {error}")
+        logger.error(f"Error validating API key: {error}")
         return False
 
 # /start command handler
@@ -57,7 +74,7 @@ async def start(update: Update, context: CallbackContext) -> None:
     username = update.message.from_user.username
     add_user(user_id, username)
     user = api_collection.find_one({"user_id": user_id})
-    
+
     if user:
         await update.message.reply_text(f"📮 Hello {update.message.from_user.first_name}, \nYou are now successfully connected to our Terabis platform.\n\nSend Terabox link for converting")
     else:
@@ -87,10 +104,8 @@ async def help_command(update: Update, context: CallbackContext) -> None:
 
 # /broadcast command handler (only for admin)
 async def broadcast(update: Update, context: CallbackContext) -> None:
-    # Ensure the user is the admin
-    admin_id = os.getenv("ADMIN_ID")
-    if str(update.message.from_user.id) == admin_id:
-        message = ' '.join(context.args)  # Capture arguments passed to /broadcast
+    if is_admin(update.message.from_user.id):
+        message = ' '.join(context.args)
         if not message:
             await update.message.reply_text("Please provide a message to broadcast.\n like this /broadcast massage")
             return
@@ -101,13 +116,11 @@ async def broadcast(update: Update, context: CallbackContext) -> None:
         await update.message.reply_text("Message broadcasted!")
     else:
         await update.message.reply_text("You are not authorized to broadcast.")
-      
+
 # /broadcast command handler (only for admin) (api id connected)
 async def broadcast_api(update: Update, context: CallbackContext) -> None:
-    # Ensure the user is the admin
-    admin_id = os.getenv("ADMIN_ID")
-    if str(update.message.from_user.id) == admin_id:
-        message = ' '.join(context.args)  # Capture arguments passed to /broadcast
+    if is_admin(update.message.from_user.id):
+        message = ' '.join(context.args)
         if not message:
             await update.message.reply_text("Please provide a message to broadcast.\n like this /broadcast_api massage")
             return
@@ -122,8 +135,8 @@ async def broadcast_api(update: Update, context: CallbackContext) -> None:
 # Command: /connect
 async def connect(update: Update, context: CallbackContext) -> None:
     message_parts = update.message.text.split(" ")
-    if len(message_parts) < 2:
-        return update.message.reply_text("Please provide your API key. Example: /connect YOUR_API_KEY \n\nFor API ID /help")
+    if len(message_parts) < 2 or not message_parts[1].strip():
+        return update.message.reply_text("❌ Please provide a valid API key. Example: /connect YOUR_API_KEY\n\nFor API help, use /help")
 
     api_id = message_parts[1]
     user_id = update.message.from_user.id
@@ -159,34 +172,37 @@ async def commands(update: Update, context: CallbackContext) -> None:
 async def view(update: Update, context: CallbackContext) -> None:
     user_id = update.message.from_user.id
     user = api_collection.find_one({"user_id": user_id})
-    if user and "user_api)" in user:
-        update.message.reply_text(f"✅ Your connected API key: {user['user_api']}", parse_mode='Markdown')
+    if user and "api_id" in user:
+        update.message.reply_text(f"✅ Your connected API key: {user['api_id']}", parse_mode='Markdown')
     else:
         update.message.reply_text("⚠️ No API key is connected. Use /connect to link one.")
 
 # Simple TCP Health Check Server
 def health_check_server():
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        s.bind(('0.0.0.0', 8000))  # Bind to all available interfaces on port 8000
-        s.listen(1)
-        print("Health check server listening on port 8000...")
-        while True:
-            conn, addr = s.accept()
-            with conn:
-                print('Health check received from', addr)
-                conn.sendall(b"OK")
+    try:
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.bind(('0.0.0.0', 8000))
+            s.listen(1)
+            logger.info("Health check server listening on port 8000...")
+            while True:
+                conn, addr = s.accept()
+                with conn:
+                    logger.info(f'Health check received from {addr}')
+                    conn.sendall(b"OK")
+    except Exception as e:
+        logger.error(f"Health check server error: {e}")
 
-# MongoDB Connection Test (Optional: Check if the MongoDB connection is working)
+# MongoDB Connection Test
 def test_mongo_connection():
     try:
         client.admin.command('ping')
-        print("MongoDB connection successful")
+        logger.info("MongoDB connection successful")
     except Exception as e:
-        print(f"Error connecting to MongoDB: {e}")
+        logger.error(f"Error connecting to MongoDB: {e}")
 
 # Main function to run the bot and the health check server
 def main():
-    # Test MongoDB connection (optional)
+    # Test MongoDB connection
     test_mongo_connection()
 
     # Start the health check server in a separate thread
@@ -205,6 +221,7 @@ def main():
     application.add_handler(CommandHandler("disconnect", disconnect))
     application.add_handler(CommandHandler("commands", commands))
     application.add_handler(CommandHandler("view", view))
+    
     # Start polling for updates from Telegram
     application.run_polling()
 
