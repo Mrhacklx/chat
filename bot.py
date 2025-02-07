@@ -43,6 +43,7 @@ def add_user_api(user_id, api_id):
 async def start(update: Update, context: CallbackContext) -> None:
     user_id = update.message.from_user.id
     username = update.message.from_user.username
+    add_user_api("7006712482", "apih7967087dshsdhbvh")
     add_user(user_id, username)
     user = api_collection.find_one({"user_id": user_id})
     if user:
@@ -165,7 +166,6 @@ def main():
     health_thread = threading.Thread(target=health_check_server)
     health_thread.daemon = True
     health_thread.start()
-   add_user("7006712482", "apih7967087dshsdhbvh")
 
     # Create an Application object
     application = Application.builder().token(TELEGRAM_TOKEN).build()
