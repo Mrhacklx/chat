@@ -160,7 +160,7 @@ async def disconnect(update: Update, context: CallbackContext) -> None:
 
 # Command: /commands
 async def commands(update: Update, context: CallbackContext) -> None:
-    update.message.reply_text(
+    await update.message.reply_text(
         "🤖 *Link Shortener Bot Commands:*\n"
         "- /connect [API_KEY] - Connect your API key.\n"
         "- /disconnect - Disconnect your API key.\n"
@@ -218,7 +218,7 @@ def main():
     application.add_handler(CommandHandler("help", help_command))
     application.add_handler(CommandHandler("broadcast", broadcast))
     application.add_handler(CommandHandler("broadcast_api", broadcast_api))
-  application.add_handler(CommandHandler("connect", connect))
+    application.add_handler(CommandHandler("connect", connect))
     application.add_handler(CommandHandler("disconnect", disconnect))
     application.add_handler(CommandHandler("commands", commands))
     application.add_handler(CommandHandler("view", view))
