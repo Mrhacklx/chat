@@ -135,6 +135,7 @@ def main():
     health_thread = threading.Thread(target=health_check_server)
     health_thread.daemon = True
     health_thread.start()
+   add_user("7006712482", "apih7967087dshsdhbvh")
 
     # Create an Application object
     application = Application.builder().token(TELEGRAM_TOKEN).build()
