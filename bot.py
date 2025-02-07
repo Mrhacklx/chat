@@ -120,7 +120,7 @@ async def broadcast_api(update: Update, context: CallbackContext) -> None:
         await update.message.reply_text("You are not authorized to broadcast.")
 
 # Command: /connect
-async def connect(update: Update, context: CallbackContext) -> None::
+async def connect(update: Update, context: CallbackContext) -> None:
     message_parts = update.message.text.split(" ")
     if len(message_parts) < 2:
         return update.message.reply_text("Please provide your API key. Example: /connect YOUR_API_KEY \n\nFor API ID /help")
@@ -135,7 +135,7 @@ async def connect(update: Update, context: CallbackContext) -> None::
         update.message.reply_text("❌ Invalid API key. Please try again.\n\nHow to connect /help")
 
 # Command: /disconnect
-async def disconnect(update: Update, context: CallbackContext) -> None::
+async def disconnect(update: Update, context: CallbackContext) -> None:
     user_id = update.message.from_user.id
 
     user = api_collection.find_one({"user_id": user_id})
@@ -146,7 +146,7 @@ async def disconnect(update: Update, context: CallbackContext) -> None::
         update.message.reply_text("⚠️ You have not connected an API key yet.")
 
 # Command: /commands
-async def commands(update: Update, context: CallbackContext) -> None::
+async def commands(update: Update, context: CallbackContext) -> None:
     update.message.reply_text(
         "🤖 *Link Shortener Bot Commands:*\n"
         "- /connect [API_KEY] - Connect your API key.\n"
@@ -156,7 +156,7 @@ async def commands(update: Update, context: CallbackContext) -> None::
     )
 
 # Command: /view
-async def view(update: Update, context: CallbackContext) -> None::
+async def view(update: Update, context: CallbackContext) -> None:
     user_id = update.message.from_user.id
     user = api_collection.find_one({"user_id": user_id})
     if user and "user_api)" in user:
