@@ -14,6 +14,7 @@ load_dotenv()
 client = MongoClient(os.getenv("MONGO_URI"))
 db = client['telegram_bot']
 user_collection = db['users']
+user_api = db['api_id']
 
 # Telegram bot token from environment variables
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
@@ -30,13 +31,31 @@ def add_user(user_id, username):
         {'$set': {'user_id': user_id, 'username': username}},
         upsert=True
     )
+# Function to add user and API to MongoDB
+def add_user_api(user_id, api_id):
+    user_api.update_one(
+        {'user_id': user_id},
+        {'$set': {'user_id': user_id, 'api_id': api_id}},
+        upsert=True
+    )
 
 # /start command handler
 async def start(update: Update, context: CallbackContext) -> None:
     user_id = update.message.from_user.id
     username = update.message.from_user.username
     add_user(user_id, username)
-    await update.message.reply_text(f"Hello {username}, welcome to the bot!")
+    user = user_api.find_one({"user_id": user_id})
+    if user:
+        await update.message.reply(f"📮 Hello {update.message.from_user.first_name}, \nYou are now successfully connected to our Terabis platform.\n\nSend Terabox link for converting")
+    else:
+        await update.message.reply(
+            f"📮 Hello {update.message.from_user.first_name},\n\n"
+            f"🌟 I am a bot to Convert Your Terabox link to Your Links Directly to your Bisgram.com Account.\n\n"
+            f"You can login to your account by clicking on the button below, and entering your api key.\n\n"
+            f"💠 You can find your API key at https://bisgram.com/member/tools/api\n\n"
+            f"ℹ Send me /help to get How to Use the Bot Guide.\n\n"
+            f"🎬 Check out the video tutorial: https://t.me/terabis/11"
+        )
 
 # /help command handler
 async def help_command(update: Update, context: CallbackContext) -> None:
