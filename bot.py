@@ -39,6 +39,18 @@ def add_user_api(user_id, api_id):
         upsert=True
     )
 
+async def validate_api_id(api_id):
+    try:
+        test_url = "https://example.com"  # Replace with a valid URL for testing
+        api_url = f"https://bisgram.com/api?api={api_id}&url={test_url}"
+        response = requests.get(api_url)
+        if response.json().get("status") == "success":
+            return True
+        return False
+    except Exception as error:
+        print(f"Error validating API key: {error}")
+        return False
+
 # /start command handler
 async def start(update: Update, context: CallbackContext) -> None:
     user_id = update.message.from_user.id
@@ -106,6 +118,21 @@ async def broadcast_api(update: Update, context: CallbackContext) -> None:
         await update.message.reply_text("Message broadcasted!")
     else:
         await update.message.reply_text("You are not authorized to broadcast.")
+
+# Command: /connect
+async def connect(update: Update, context: CallbackContext):
+    message_parts = update.message.text.split(" ")
+    if len(message_parts) < 2:
+        return update.message.reply_text("Please provide your API key. Example: /connect YOUR_API_KEY \n\nFor API ID /help")
+
+    api_id = message_parts[1]
+    user_id = update.message.from_user.id
+
+    if await validate_api_id(api_id):
+        add_user_api(user_id, api_id)
+        update.message.reply_text("✅ API key connected successfully! Send Terabox link for converting")
+    else:
+        update.message.reply_text("❌ Invalid API key. Please try again.\n\nHow to connect /help")
 
 # Command: /disconnect
 async def disconnect(update: Update, context: CallbackContext):
