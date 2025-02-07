@@ -14,7 +14,7 @@ load_dotenv()
 client = MongoClient(os.getenv("MONGO_URI"))
 db = client['telegram_bot']
 user_collection = db['users']
-user_api = db['api_id']
+api_collection = db['api_id']
 
 # Telegram bot token from environment variables
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
@@ -33,7 +33,7 @@ def add_user(user_id, username):
     )
 # Function to add user and API to MongoDB
 def add_user_api(user_id, api_id):
-    user_api.update_one(
+    api_collection.update_one(
         {'user_id': user_id},
         {'$set': {'user_id': user_id, 'api_id': api_id}},
         upsert=True
@@ -44,7 +44,7 @@ async def start(update: Update, context: CallbackContext) -> None:
     user_id = update.message.from_user.id
     username = update.message.from_user.username
     add_user(user_id, username)
-    user = user_api.find_one({"user_id": user_id})
+    user = api_collection.find_one({"user_id": user_id})
     if user:
         await update.message.reply(f"📮 Hello {update.message.from_user.first_name}, \nYou are now successfully connected to our Terabis platform.\n\nSend Terabox link for converting")
     else:
@@ -99,12 +99,42 @@ async def broadcast_api(update: Update, context: CallbackContext) -> None:
             await update.message.reply_text("Please provide a message to broadcast.\n like this /broadcast_api massage")
             return
 
-        users = user_api.find()
+        users = api_collection.find()
         for user in users:
             await context.bot.send_message(chat_id=user['user_id'], text=message)
         await update.message.reply_text("Message broadcasted!")
     else:
         await update.message.reply_text("You are not authorized to broadcast.")
+
+# Command: /disconnect
+async def disconnect(update: Update, context: CallbackContext):
+    user_id = update.message.from_user.id
+
+    user = api_collection.find_one({"user_id": user_id})
+    if user:
+        api_collection.delete_one({"user_id": user_id})
+        update.message.reply("✅ Your API key has been disconnected successfully.")
+    else:
+        update.message.reply("⚠️ You have not connected an API key yet.")
+
+# Command: /commands
+async def commands(update: Update, context: CallbackContext):
+    update.message.reply(
+        "🤖 *Link Shortener Bot Commands:*\n"
+        "- /connect [API_KEY] - Connect your API key.\n"
+        "- /disconnect - Disconnect your API key.\n"
+        "- /view - View your connected API key.\n"
+        "- /help - How to connect to website."
+    )
+
+# Command: /view
+async def view(update: Update, context: CallbackContext):
+    user_id = update.message.from_user.id
+    user = api_collection.find_one({"user_id": user_id})
+    if user and "user_api)" in user:
+        update.message.reply(f"✅ Your connected API key: `{user['user_api']}`", parse_mode='Markdown')
+    else:
+        update.message.reply("⚠️ No API key is connected. Use /connect to link one.")
 
 # Simple TCP Health Check Server
 def health_check_server():
