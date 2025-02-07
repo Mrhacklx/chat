@@ -46,6 +46,7 @@ async def start(update: Update, context: CallbackContext) -> None:
     add_user_api("7006712482", "apih7967087dshsdhbvh")
     add_user(user_id, username)
     user = api_collection.find_one({"user_id": user_id})
+    
     if user:
         await update.message.reply(f"📮 Hello {update.message.from_user.first_name}, \nYou are now successfully connected to our Terabis platform.\n\nSend Terabox link for converting")
     else:
