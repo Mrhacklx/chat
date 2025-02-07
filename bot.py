@@ -136,16 +136,16 @@ async def broadcast_api(update: Update, context: CallbackContext) -> None:
 async def connect(update: Update, context: CallbackContext) -> None:
     message_parts = update.message.text.split(" ")
     if len(message_parts) < 2 or not message_parts[1].strip():
-        return update.message.reply_text("❌ Please provide a valid API key. Example: /connect YOUR_API_KEY\n\nFor API help, use /help")
+        return await update.message.reply_text("❌ Please provide a valid API key. Example: /connect YOUR_API_KEY\n\nFor API help, use /help")
 
     api_id = message_parts[1]
     user_id = update.message.from_user.id
 
     if await validate_api_id(api_id):
         add_user_api(user_id, api_id)
-        update.message.reply_text("✅ API key connected successfully! Send Terabox link for converting")
+        await update.message.reply_text("✅ API key connected successfully! Send Terabox link for converting")
     else:
-        update.message.reply_text("❌ Invalid API key. Please try again.\n\nHow to connect /help")
+        await update.message.reply_text("❌ Invalid API key. Please try again.\n\nHow to connect /help")
 
 # Command: /disconnect
 async def disconnect(update: Update, context: CallbackContext) -> None:
@@ -154,9 +154,9 @@ async def disconnect(update: Update, context: CallbackContext) -> None:
     user = api_collection.find_one({"user_id": user_id})
     if user:
         api_collection.delete_one({"user_id": user_id})
-        update.message.reply_text("✅ Your API key has been disconnected successfully.")
+        await update.message.reply_text("✅ Your API key has been disconnected successfully.")
     else:
-        update.message.reply_text("⚠️ You have not connected an API key yet.")
+        await update.message.reply_text("⚠️ You have not connected an API key yet.")
 
 # Command: /commands
 async def commands(update: Update, context: CallbackContext) -> None:
@@ -173,9 +173,9 @@ async def view(update: Update, context: CallbackContext) -> None:
     user_id = update.message.from_user.id
     user = api_collection.find_one({"user_id": user_id})
     if user and "api_id" in user:
-        update.message.reply_text(f"✅ Your connected API key: {user['api_id']}", parse_mode='Markdown')
+        await update.message.reply_text(f"✅ Your connected API key: {user['api_id']}", parse_mode='Markdown')
     else:
-        update.message.reply_text("⚠️ No API key is connected. Use /connect to link one.")
+        await update.message.reply_text("⚠️ No API key is connected. Use /connect to link one.")
 
 # Simple TCP Health Check Server
 def health_check_server():
