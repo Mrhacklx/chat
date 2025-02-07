@@ -59,7 +59,18 @@ async def start(update: Update, context: CallbackContext) -> None:
 
 # /help command handler
 async def help_command(update: Update, context: CallbackContext) -> None:
-    await update.message.reply_text('Use /start to start the bot!')
+    await update.message.reply(
+        "How to Connect:\n"
+        "1. Go to Bisgram.com\n"
+        "2. Create an Account\n"
+        "3. Click on the menu bar (top left side)\n"
+        "4. Click on *Tools > Developer API*\n"
+        "5. Copy the API token\n"
+        "6. Use this command: /connect YOUR_API_KEY\n"
+        "Example: /connect 8268d7f25na2c690bk25d4k20fbc63p5p09d6906\n\n"
+        "🎬 Check out the video tutorial: \nhttps://t.me/terabis/11\n\n"
+        "For any confusion or help, contact @ayushx2026_bot"
+    )
 
 # /broadcast command handler (only for admin)
 async def broadcast(update: Update, context: CallbackContext) -> None:
@@ -68,10 +79,27 @@ async def broadcast(update: Update, context: CallbackContext) -> None:
     if str(update.message.from_user.id) == admin_id:
         message = ' '.join(context.args)  # Capture arguments passed to /broadcast
         if not message:
-            await update.message.reply_text("Please provide a message to broadcast.")
+            await update.message.reply_text("Please provide a message to broadcast.\n like this /broadcast massage")
             return
 
         users = user_collection.find()
+        for user in users:
+            await context.bot.send_message(chat_id=user['user_id'], text=message)
+        await update.message.reply_text("Message broadcasted!")
+    else:
+        await update.message.reply_text("You are not authorized to broadcast.")
+      
+# /broadcast command handler (only for admin) (api id connected)
+async def broadcast_api(update: Update, context: CallbackContext) -> None:
+    # Ensure the user is the admin
+    admin_id = os.getenv("ADMIN_ID")
+    if str(update.message.from_user.id) == admin_id:
+        message = ' '.join(context.args)  # Capture arguments passed to /broadcast
+        if not message:
+            await update.message.reply_text("Please provide a message to broadcast.\n like this /broadcast_api massage")
+            return
+
+        users = user_api.find()
         for user in users:
             await context.bot.send_message(chat_id=user['user_id'], text=message)
         await update.message.reply_text("Message broadcasted!")
@@ -115,6 +143,7 @@ def main():
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("help", help_command))
     application.add_handler(CommandHandler("broadcast", broadcast))
+    application.add_handler(CommandHandler("broadcast_api", broadcast_api))
 
     # Start polling for updates from Telegram
     application.run_polling()
