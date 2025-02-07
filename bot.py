@@ -83,17 +83,7 @@ async def start(update: Update, context: CallbackContext) -> None:
 # /help command handler
 async def help_command(update: Update, context: CallbackContext) -> None:
     try:
-        await update.message.reply(
-            "How to Connect:\n"
-            "1. Go to Bisgram.com\n"
-            "2. Create an Account\n"
-            "3. Click on the menu bar (top left side)\n"
-            "4. Click on *Tools > Developer API*\n"
-            "5. Copy the API token\n"
-            "6. Use this command: /connect YOUR_API_KEY\n"
-            "Example: /connect 8268d7f25na2c690bk25d4k20fbc63p5p09d6906\n\n"
-            "🎬 Check out the video tutorial: \nhttps://t.me/terabis/11\n\n"
-            "For any confusion or help, contact @ayushx2026_bot"
+        await update.message.reply("For any confusion or help, contact @ayushx2026_bot"
         )
     except Exception as e:
         logging.error(f"Error in /help command: {e}")
