@@ -70,9 +70,15 @@ async def start(update: Update, context: CallbackContext) -> None:
                 f"ℹ Send me /help to get How to Use the Bot Guide.\n\n"
                 f"🎬 Check out the video tutorial: https://t.me/terabis/11"
             )
+    except AttributeError:
+        # Handle the case when message object is None or doesn't have a reply method
+        logging.error(f"Error: Unable to send reply to user {user_id} due to missing message object.")
     except Exception as e:
         logging.error(f"Error in /start command for user {user_id}: {e}")
-        await update.message.reply("⚠️ An error occurred while processing your request.")
+        if update.message:
+            await update.message.reply("⚠️ An error occurred while processing your request.")
+        else:
+            logging.error("Message object is missing, unable to send reply.")
 
 # /help command handler
 async def help_command(update: Update, context: CallbackContext) -> None:
