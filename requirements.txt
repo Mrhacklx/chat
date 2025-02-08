@@ -2,4 +2,4 @@ python-telegram-bot==20.0
 pymongo[srv]==4.0.0
 python-dotenv==0.19.2
 dnspython==2.2.1
-requests==2.28.1  # Make sure to include requests
+requests==2.28.1
