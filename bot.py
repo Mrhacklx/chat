@@ -178,7 +178,7 @@ async def view(update: Update, context: CallbackContext) -> None:
     else:
         await update.message.reply_text("⚠️ No API key is connected. Use /connect to link one.")
 
-def handle_message(update: Update, context: CallbackContext):
+async def handle_message(update: Update, context: CallbackContext) -> None:
     user_id = update.message.from_user.id
     user_data = api_collection.find_one({"user_id": user_id})
 
