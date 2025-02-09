@@ -183,7 +183,7 @@ def handle_message(update: Update, context: CallbackContext):
     user_data = api_collection.find_one({"user_id": user_id})
 
     if not user_data or not user_data.get("api_id"):
-        await update.message.reply_text("⚠️ You haven't connected your API key yet. Please use /connect [API_KEY].")
+      await update.message.reply_text("⚠️ You haven't connected your API key yet. Please use /connect [API_KEY].")
         return
 
     api_key = user_data["api_id"]
