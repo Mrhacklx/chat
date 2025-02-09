@@ -209,21 +209,22 @@ async def handle_message(update: Update, context: CallbackContext) -> None:
             if response.json().get("status") == "success":
                 shortened_url = response.json().get("shortenedUrl")
                 shortened_links.append(f"Link {idx} 👇👇\n{shortened_url}")
-            else:
-                shortened_links.append(f"❌ Failed to shorten Link {idx}.")
+            # If the response status is not "success", do nothing (invalid link)
         else:
-            shortened_links.append(f"Please send a valid Terabox link for Link {idx}.")
+            # If the link is invalid, we do nothing and skip it silently
+            continue
 
-    # Format the response text with all the shortened links
-    response_text = "🔰 𝙁𝙐𝙇𝙇 𝙑𝙄𝘿𝙀𝙊 🎥\n\n" + "\n\n".join(shortened_links) + "\n\n♡     ❍     ⌲ \nLike React Share"
-    
-    # Send the response based on the media type
-    if update.message.photo:
-        await update.message.reply_photo(update.message.photo[-1].file_id, caption=response_text)
-    elif update.message.video:
-        await update.message.reply_video(update.message.video.file_id, caption=response_text)
-    else:
-        await update.message.reply_text(response_text)
+    if shortened_links:
+        # Format the response text with all the shortened links
+        response_text = "🔰 𝙁𝙐𝙇𝙇 𝙑𝙄𝘿𝙀𝙊 🎥\n\n" + "\n\n".join(shortened_links) + "\n\n♡     ❍     ⌲ \nLike React Share"
+        
+        # Send the response based on the media type
+        if update.message.photo:
+            await update.message.reply_photo(update.message.photo[-1].file_id, caption=response_text)
+        elif update.message.video:
+            await update.message.reply_video(update.message.video.file_id, caption=response_text)
+        else:
+            await update.message.reply_text(response_text)
 
 # Simple TCP Health Check Server
 def health_check_server():
