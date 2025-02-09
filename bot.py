@@ -178,7 +178,47 @@ async def view(update: Update, context: CallbackContext) -> None:
         await update.message.reply_text("⚠️ No API key is connected. Use /connect to link one.")
 
 def handle_message(update: Update, context: CallbackContext):
-    update.message.reply_text("hi test")
+    user_id = update.message.from_user.id
+    user_data = users_collection.find_one({"user_id": user_id})
+
+    if not user_data or not user_data.get("api_key"):
+        update.message.reply_text("⚠️ You haven't connected your API key yet. Please use /connect [API_KEY].")
+        return
+
+    api_key = user_data["api_key"]
+    message_text = update.message.caption or update.message.text or ""
+
+    link_regex = r"(https?://[^\s]+)"
+    links = re.findall(link_regex, message_text)
+
+    if not links:
+        update.message.reply_text("Please send a valid link to shorten.")
+        return
+
+    for link in links:
+        if "/s/" in link:
+            long_url = link.replace("/s/", "https://terabis.blogspot.com/?url=")
+
+            # Shorten the link using the user's API key
+            api_url = f"https://bisgram.com/api?api={api_key}&url={long_url}"
+            response = requests.get(api_url)
+
+            if response.json().get("status") == "success":
+                shortened_url = response.json().get("shortenedUrl")
+                res_text = f"🔰 𝙁𝙐𝙇𝙇 𝙑𝙄𝘿𝙀𝙊 🎥\n\nLink 👇👇\n{shortened_url}\n\n♡     ❍     ⌲ \nLike React Share"
+                
+                if update.message.photo:
+                    update.message.reply_photo(update.message.photo[-1].file_id, caption=res_text)
+                elif update.message.video:
+                    update.message.reply_video(update.message.video.file_id, caption=res_text)
+                elif update.message.document:
+                    update.message.reply_document(update.message.document.file_id, caption=res_text)
+                else:
+                    update.message.reply_text(res_text)
+            else:
+                update.message.reply_text("❌ Failed to shorten the link.")
+        else:
+            update.message.reply_text("Please send a valid Terabox link.")
 
 # Simple TCP Health Check Server
 def health_check_server():
