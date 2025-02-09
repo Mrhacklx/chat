@@ -219,4 +219,17 @@ def main():
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("help", help_command))
     application.add_handler(CommandHandler("broadcast", broadcast))
-    application
+    application.add_handler(CommandHandler("broadcast_api", broadcast_api))
+    application.add_handler(CommandHandler("connect", connect))
+    application.add_handler(CommandHandler("disconnect", disconnect))
+    application.add_handler(CommandHandler("commands", commands))
+    application.add_handler(CommandHandler("view", view))
+
+    # Fix here: update Filters to filters
+    application.add_handler(MessageHandler(filters.TEXT | filters.PHOTO | filters.VIDEO, handle_message))
+
+    # Start polling for updates from Telegram
+    application.run_polling()
+
+if __name__ == '__main__':
+    main()
