@@ -102,6 +102,19 @@ async def help_command(update: Update, context: CallbackContext) -> None:
         "🎬 Check out the video tutorial: \nhttps://t.me/terabis/11\n\n"
         "For any confusion or help, contact @ayushx2026_bot"
     )
+# /commands command handler
+async def commands(update: Update, context: CallbackContext) -> None:
+    command_list = (
+        "/start - Start the bot\n"
+        "/help - Get help information\n"
+        "/connect [API_KEY] - Connect your API key\n"
+        "/disconnect - Disconnect your API key\n"
+        "/view - View your connected API key\n"
+        "/broadcast - Send a broadcast message\n"
+        "/broadcast_api - Broadcast message to users with API keys connected\n"
+        "/commands - List available commands"
+    )
+    await update.message.reply_text(command_list)
 
 # Command to handle broadcasting
 async def broadcast(update: Update, context: CallbackContext) -> None:
