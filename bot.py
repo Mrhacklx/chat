@@ -4,7 +4,8 @@ import socket
 import threading
 import requests
 from telegram import Update
-from telegram.ext import Application, MessageHandler, Filters, CommandHandler, CallbackContext
+from telegram.ext import Application, MessageHandler, CommandHandler, CallbackContext
+from telegram.ext.filters import Filters
 from pymongo import MongoClient
 from dotenv import load_dotenv
 
