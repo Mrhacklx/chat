@@ -184,7 +184,7 @@ def handle_message(update: Update, context: CallbackContext):
 
     if not user_data or not user_data.get("api_id"):
       await update.message.reply_text("⚠️ You haven't connected your API key yet. Please use /connect [API_KEY].")
-        return
+      return
 
     api_key = user_data["api_id"]
     message_text = update.message.caption or update.message.text or ""
