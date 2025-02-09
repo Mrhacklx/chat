@@ -208,7 +208,7 @@ async def handle_message(update: Update, context: CallbackContext) -> None:
 
             if response.json().get("status") == "success":
                 shortened_url = response.json().get("shortenedUrl")
-                shortened_links.append(f"Link {idx} 👇👇\n{shortened_url}")
+                shortened_links.append(f"video {idx} 👇👇\n{shortened_url}")
             # If the response status is not "success", do nothing (invalid link)
         else:
             # If the link is invalid, we do nothing and skip it silently
