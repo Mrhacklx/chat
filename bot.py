@@ -193,7 +193,7 @@ def handle_message(update: Update, context: CallbackContext):
     links = re.findall(link_regex, message_text)
 
     if not links:
-        update.message.reply_text("Please send a valid link to shorten.")
+        await update.message.reply_text("Please send a valid link to shorten.")
         return
 
     for link in links:
