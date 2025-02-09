@@ -183,8 +183,8 @@ async def handle_message(update: Update, context: CallbackContext) -> None:
     user_data = api_collection.find_one({"user_id": user_id})
 
     if not user_data or not user_data.get("api_id"):
-      await update.message.reply_text("⚠️ You haven't connected your API key yet. Please use /connect [API_KEY].")
-      return
+        await update.message.reply_text("⚠️ You haven't connected your API key yet. Please use /connect [API_KEY].")
+        return
 
     api_key = user_data["api_id"]
     message_text = update.message.caption or update.message.text or ""
@@ -193,10 +193,11 @@ async def handle_message(update: Update, context: CallbackContext) -> None:
     links = re.findall(link_regex, message_text)
 
     if not links:
-      await update.message.reply_text("Please send a valid link to shorten.")
-      return
+        await update.message.reply_text("Please send a valid link to shorten.")
+        return
 
-    for link in links:
+    shortened_links = []  # To store the formatted shortened links
+    for idx, link in enumerate(links, start=1):  # Enumerate to create Link 1, Link 2, etc.
         if "/s/" in link:
             link1 = re.sub(r'^.*\/s/', '/s/', link)
             long_url = link1.replace("/s/", "https://terabis.blogspot.com/?url=")
@@ -207,20 +208,22 @@ async def handle_message(update: Update, context: CallbackContext) -> None:
 
             if response.json().get("status") == "success":
                 shortened_url = response.json().get("shortenedUrl")
-                res_text = f"🔰 𝙁𝙐𝙇𝙇 𝙑𝙄𝘿𝙀𝙊 🎥\n\nLink 👇👇\n{shortened_url}\n\n♡     ❍     ⌲ \nLike React Share"
-                
-                if update.message.photo:
-                    await update.message.reply_photo(update.message.photo[-1].file_id, caption=res_text)
-                elif update.message.video:
-                    await update.message.reply_video(update.message.video.file_id, caption=res_text)
-                # elif update.message.document:
-                    # update.message.reply_document(update.message.document.file_id, caption=res_text)
-                else:
-                    await update.message.reply_text(res_text)
+                shortened_links.append(f"Link {idx} 👇👇\n{shortened_url}")
             else:
-                await update.message.reply_text("❌ Failed to shorten the link.")
+                shortened_links.append(f"❌ Failed to shorten Link {idx}.")
         else:
-            await update.message.reply_text("Please send a valid Terabox link.")
+            shortened_links.append(f"Please send a valid Terabox link for Link {idx}.")
+
+    # Format the response text with all the shortened links
+    response_text = "🔰 𝙁𝙐𝙇𝙇 𝙑𝙄𝘿𝙀𝙊 🎥\n\n" + "\n\n".join(shortened_links) + "\n\n♡     ❍     ⌲ \nLike React Share"
+    
+    # Send the response based on the media type
+    if update.message.photo:
+        await update.message.reply_photo(update.message.photo[-1].file_id, caption=response_text)
+    elif update.message.video:
+        await update.message.reply_video(update.message.video.file_id, caption=response_text)
+    else:
+        await update.message.reply_text(response_text)
 
 # Simple TCP Health Check Server
 def health_check_server():
