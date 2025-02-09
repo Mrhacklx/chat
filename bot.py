@@ -179,13 +179,13 @@ async def view(update: Update, context: CallbackContext) -> None:
 
 def handle_message(update: Update, context: CallbackContext):
     user_id = update.message.from_user.id
-    user_data = users_collection.find_one({"user_id": user_id})
+    user_data = api_collection.find_one({"user_id": user_id})
 
-    if not user_data or not user_data.get("api_key"):
+    if not user_data or not user_data.get("api_id"):
         update.message.reply_text("⚠️ You haven't connected your API key yet. Please use /connect [API_KEY].")
         return
 
-    api_key = user_data["api_key"]
+    api_key = user_data["api_id"]
     message_text = update.message.caption or update.message.text or ""
 
     link_regex = r"(https?://[^\s]+)"
@@ -211,8 +211,8 @@ def handle_message(update: Update, context: CallbackContext):
                     update.message.reply_photo(update.message.photo[-1].file_id, caption=res_text)
                 elif update.message.video:
                     update.message.reply_video(update.message.video.file_id, caption=res_text)
-                elif update.message.document:
-                    update.message.reply_document(update.message.document.file_id, caption=res_text)
+                # elif update.message.document:
+                    # update.message.reply_document(update.message.document.file_id, caption=res_text)
                 else:
                     update.message.reply_text(res_text)
             else:
