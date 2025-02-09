@@ -177,6 +177,9 @@ async def view(update: Update, context: CallbackContext) -> None:
     else:
         await update.message.reply_text("⚠️ No API key is connected. Use /connect to link one.")
 
+def handle_message(update: Update, context: CallbackContext):
+  await update.message.reply_text("hi test")
+
 # Simple TCP Health Check Server
 def health_check_server():
     try:
@@ -222,6 +225,7 @@ def main():
     application.add_handler(CommandHandler("disconnect", disconnect))
     application.add_handler(CommandHandler("commands", commands))
     application.add_handler(CommandHandler("view", view))
+    application.add_handler(MessageHandler(Filters.text | Filters.photo | Filters.video | Filters.document, handle_message))
     
     # Start polling for updates from Telegram
     application.run_polling()
