@@ -198,7 +198,8 @@ async def handle_message(update: Update, context: CallbackContext) -> None:
 
     for link in links:
         if "/s/" in link:
-            long_url = link.replace("/s/", "https://terabis.blogspot.com/?url=")
+            link1 = link.replace(/^.*\/s\//, "/s/");
+            long_url = link1.replace("/s/", "https://terabis.blogspot.com/?url=")
 
             # Shorten the link using the user's API key
             api_url = f"https://bisgram.com/api?api={api_key}&url={long_url}"
