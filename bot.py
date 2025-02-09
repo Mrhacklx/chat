@@ -178,7 +178,7 @@ async def view(update: Update, context: CallbackContext) -> None:
         await update.message.reply_text("⚠️ No API key is connected. Use /connect to link one.")
 
 def handle_message(update: Update, context: CallbackContext):
-  await update.message.reply_text("hi test")
+  update.message.reply_text("hi test")
 
 # Simple TCP Health Check Server
 def health_check_server():
