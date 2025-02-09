@@ -4,7 +4,7 @@ import socket
 import threading
 import requests
 from telegram import Update
-from telegram.ext import Application, MessageHandler, CommandHandler, CallbackContext, filters
+from telegram.ext import Application, MessageHandler, CommandHandler, CallbackContext, filters  # Updated imports
 from pymongo import MongoClient
 from dotenv import load_dotenv
 
@@ -178,7 +178,7 @@ async def view(update: Update, context: CallbackContext) -> None:
         await update.message.reply_text("⚠️ No API key is connected. Use /connect to link one.")
 
 def handle_message(update: Update, context: CallbackContext):
-  update.message.reply_text("hi test")
+    update.message.reply_text("hi test")
 
 # Simple TCP Health Check Server
 def health_check_server():
@@ -225,8 +225,10 @@ def main():
     application.add_handler(CommandHandler("disconnect", disconnect))
     application.add_handler(CommandHandler("commands", commands))
     application.add_handler(CommandHandler("view", view))
-    application.add_handler(MessageHandler(Filters.text | Filters.photo | Filters.video | Filters.document, handle_message))
-    
+
+    # Fix here: update Filters to filters
+    application.add_handler(MessageHandler(filters.TEXT | filters.PHOTO | filters.VIDEO | filters.DOCUMENT, handle_message))
+
     # Start polling for updates from Telegram
     application.run_polling()
 
