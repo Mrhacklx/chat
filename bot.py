@@ -198,7 +198,7 @@ async def handle_message(update: Update, context: CallbackContext) -> None:
 
     for link in links:
         if "/s/" in link:
-            link1 = link.replace(/^.*\/s\//, "/s/")
+            link1 = re.sub(r'^.*\/s/', '/s/', link)
             long_url = link1.replace("/s/", "https://terabis.blogspot.com/?url=")
 
             # Shorten the link using the user's API key
