@@ -4,7 +4,7 @@ import socket
 import threading
 import requests
 from telegram import Update
-from telegram.ext import Application, MessageHandler, CommandHandler, CallbackContext, filters  # Updated imports
+from telegram.ext import Application, MessageHandler, CommandHandler, CallbackContext, filters
 from pymongo import MongoClient
 from dotenv import load_dotenv
 
@@ -107,7 +107,7 @@ async def broadcast(update: Update, context: CallbackContext) -> None:
     if is_admin(update.message.from_user.id):
         message = ' '.join(context.args)
         if not message:
-            await update.message.reply_text("Please provide a message to broadcast.\n like this /broadcast massage")
+            await update.message.reply_text("Please provide a message to broadcast.\n like this /broadcast message")
             return
 
         users = user_collection.find()
@@ -122,7 +122,7 @@ async def broadcast_api(update: Update, context: CallbackContext) -> None:
     if is_admin(update.message.from_user.id):
         message = ' '.join(context.args)
         if not message:
-            await update.message.reply_text("Please provide a message to broadcast.\n like this /broadcast_api massage")
+            await update.message.reply_text("Please provide a message to broadcast.\n like this /broadcast_api message")
             return
 
         users = api_collection.find()
@@ -227,7 +227,7 @@ def main():
     application.add_handler(CommandHandler("view", view))
 
     # Fix here: update Filters to filters
-    application.add_handler(MessageHandler(filters.TEXT | filters.PHOTO | filters.VIDEO | filters.DOCUMENT, handle_message))
+    application.add_handler(MessageHandler(filters.TEXT | filters.PHOTO | filters.VIDEO | filters.Document, handle_message))
 
     # Start polling for updates from Telegram
     application.run_polling()
