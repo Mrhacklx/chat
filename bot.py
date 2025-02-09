@@ -227,7 +227,7 @@ def main():
     application.add_handler(CommandHandler("view", view))
 
     # Fix here: update Filters to filters
-    application.add_handler(MessageHandler(filters.TEXT | filters.PHOTO | filters.VIDEO | filters.Document, handle_message))
+    application.add_handler(MessageHandler(filters.TEXT | filters.PHOTO | filters.VIDEO, handle_message))
 
     # Start polling for updates from Telegram
     application.run_polling()
