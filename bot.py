@@ -102,21 +102,8 @@ async def help_command(update: Update, context: CallbackContext) -> None:
         "🎬 Check out the video tutorial: \nhttps://t.me/terabis/11\n\n"
         "For any confusion or help, contact @ayushx2026_bot"
     )
-# /commands command handler
-async def commands(update: Update, context: CallbackContext) -> None:
-    command_list = (
-        "/start - Start the bot\n"
-        "/help - Get help information\n"
-        "/connect [API_KEY] - Connect your API key\n"
-        "/disconnect - Disconnect your API key\n"
-        "/view - View your connected API key\n"
-        "/broadcast - Send a broadcast message\n"
-        "/broadcast_api - Broadcast message to users with API keys connected\n"
-        "/commands - List available commands"
-    )
-    await update.message.reply_text(command_list)
 
-# Command to handle broadcasting
+# /broadcast command handler (only for admin)
 async def broadcast(update: Update, context: CallbackContext) -> None:
     if is_admin(update.message.from_user.id):
         message = ' '.join(context.args)
@@ -131,7 +118,7 @@ async def broadcast(update: Update, context: CallbackContext) -> None:
     else:
         await update.message.reply_text("You are not authorized to broadcast.")
 
-# Command to handle broadcasting API connected users
+# /broadcast command handler (only for admin) (api id connected)
 async def broadcast_api(update: Update, context: CallbackContext) -> None:
     if is_admin(update.message.from_user.id):
         message = ' '.join(context.args)
@@ -146,7 +133,7 @@ async def broadcast_api(update: Update, context: CallbackContext) -> None:
     else:
         await update.message.reply_text("You are not authorized to broadcast.")
 
-# /connect command handler
+# Command: /connect
 async def connect(update: Update, context: CallbackContext) -> None:
     message_parts = update.message.text.split(" ")
     if len(message_parts) < 2 or not message_parts[1].strip():
@@ -161,7 +148,7 @@ async def connect(update: Update, context: CallbackContext) -> None:
     else:
         await update.message.reply_text("❌ Invalid API key. Please try again.\n\nHow to connect /help")
 
-# /disconnect command handler
+# Command: /disconnect
 async def disconnect(update: Update, context: CallbackContext) -> None:
     user_id = update.message.from_user.id
 
@@ -172,7 +159,17 @@ async def disconnect(update: Update, context: CallbackContext) -> None:
     else:
         await update.message.reply_text("⚠️ You have not connected an API key yet.")
 
-# /view command handler
+# Command: /commands
+async def commands(update: Update, context: CallbackContext) -> None:
+    await update.message.reply_text(
+        "🤖 *Link Shortener Bot Commands:*\n"
+        "- /connect [API_KEY] - Connect your API key.\n"
+        "- /disconnect - Disconnect your API key.\n"
+        "- /view - View your connected API key.\n"
+        "- /help - How to connect to website."
+    )
+
+# Command: /view
 async def view(update: Update, context: CallbackContext) -> None:
     user_id = update.message.from_user.id
     user = api_collection.find_one({"user_id": user_id})
@@ -181,14 +178,13 @@ async def view(update: Update, context: CallbackContext) -> None:
     else:
         await update.message.reply_text("⚠️ No API key is connected. Use /connect to link one.")
 
-# Handle messages and shorten links
-async def handle_message(update: Update, context: CallbackContext) -> None:
+def handle_message(update: Update, context: CallbackContext):
     user_id = update.message.from_user.id
     user_data = api_collection.find_one({"user_id": user_id})
 
     if not user_data or not user_data.get("api_id"):
-        await update.message.reply_text("⚠️ You haven't connected your API key yet. Please use /connect [API_KEY].")
-        return
+      await update.message.reply_text("⚠️ You haven't connected your API key yet. Please use /connect [API_KEY].")
+      return
 
     api_key = user_data["api_id"]
     message_text = update.message.caption or update.message.text or ""
@@ -197,8 +193,8 @@ async def handle_message(update: Update, context: CallbackContext) -> None:
     links = re.findall(link_regex, message_text)
 
     if not links:
-        await update.message.reply_text("Please send a valid link to shorten.")
-        return
+      await update.message.reply_text("Please send a valid link to shorten.")
+      return
 
     for link in links:
         if "/s/" in link:
@@ -216,6 +212,8 @@ async def handle_message(update: Update, context: CallbackContext) -> None:
                     await update.message.reply_photo(update.message.photo[-1].file_id, caption=res_text)
                 elif update.message.video:
                     await update.message.reply_video(update.message.video.file_id, caption=res_text)
+                # elif update.message.document:
+                    # update.message.reply_document(update.message.document.file_id, caption=res_text)
                 else:
                     await update.message.reply_text(res_text)
             else:
@@ -223,8 +221,39 @@ async def handle_message(update: Update, context: CallbackContext) -> None:
         else:
             await update.message.reply_text("Please send a valid Terabox link.")
 
-# Main function to run the bot and health check server
+# Simple TCP Health Check Server
+def health_check_server():
+    try:
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.bind(('0.0.0.0', 8000))
+            s.listen(1)
+            logger.info("Health check server listening on port 8000...")
+            while True:
+                conn, addr = s.accept()
+                with conn:
+                    logger.info(f'Health check received from {addr}')
+                    conn.sendall(b"OK")
+    except Exception as e:
+        logger.error(f"Health check server error: {e}")
+
+# MongoDB Connection Test
+def test_mongo_connection():
+    try:
+        client.admin.command('ping')
+        logger.info("MongoDB connection successful")
+    except Exception as e:
+        logger.error(f"Error connecting to MongoDB: {e}")
+
+# Main function to run the bot and the health check server
 def main():
+    # Test MongoDB connection
+    test_mongo_connection()
+
+    # Start the health check server in a separate thread
+    health_thread = threading.Thread(target=health_check_server)
+    health_thread.daemon = True
+    health_thread.start()
+
     # Create an Application object
     application = Application.builder().token(TELEGRAM_TOKEN).build()
 
@@ -245,4 +274,4 @@ def main():
     application.run_polling()
 
 if __name__ == '__main__':
-    main()
+    main()"
