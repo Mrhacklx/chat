@@ -17,6 +17,8 @@ client = MongoClient(os.getenv("MONGO_URI"))
 db = client['telegram_bot']
 user_collection = db['users']
 api_collection = db['api_id']
+messages_collection = db['messages']
+
 
 # MongoDB Indexes
 user_collection.create_index([('user_id', 1)], unique=True)
