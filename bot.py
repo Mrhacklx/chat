@@ -249,6 +249,63 @@ def test_mongo_connection():
     except Exception as e:
         logger.error(f"Error connecting to MongoDB: {e}")
 
+# Command: /sendthis
+async def send_this(update: Update, context: CallbackContext) -> None:
+    if is_admin(update.message.from_user.id):
+        user_id = update.message.from_user.id
+        
+        # Retrieve the last saved messages from the admin
+        saved_messages = messages_collection.find_one({'admin_id': user_id}, sort=[('timestamp', -1)])
+        
+        if not saved_messages:
+            await update.message.reply_text("No messages saved. Please use /send to save messages first.")
+            return
+        
+        # Forward each message to all connected users
+        users = user_collection.find()
+        for user in users:
+            for msg in saved_messages['messages']:
+                if msg['type'] == 'text':
+                    await context.bot.send_message(chat_id=user['user_id'], text=msg['content'])
+                elif msg['type'] == 'photo':
+                    await context.bot.send_photo(chat_id=user['user_id'], photo=msg['content'])
+                elif msg['type'] == 'video':
+                    await context.bot.send_video(chat_id=user['user_id'], video=msg['content'])
+        
+        await update.message.reply_text("Messages have been sent to all users!")
+    else:
+        await update.message.reply_text("You are not authorized to use this command.")
+
+# Command: /send
+async def send(update: Update, context: CallbackContext) -> None:
+    if is_admin(update.message.from_user.id):
+        user_id = update.message.from_user.id
+        message_data = []
+
+        # Check for text message
+        if update.message.text:
+            message_data.append({'type': 'text', 'content': update.message.text})
+
+        # Check for photo message
+        if update.message.photo:
+            message_data.append({'type': 'photo', 'content': update.message.photo[-1].file_id})
+
+        # Check for video message
+        if update.message.video:
+            message_data.append({'type': 'video', 'content': update.message.video.file_id})
+
+        # Save the message in the database
+        messages_collection.insert_one({
+            'admin_id': user_id,
+            'messages': message_data,
+            'timestamp': datetime.datetime.utcnow()
+        })
+        
+        await update.message.reply_text("Your message(s) have been saved! Use /sendthis to forward them.")
+    else:
+        await update.message.reply_text("You are not authorized to use this command.")
+
+
 # Main function to run the bot and the health check server
 def main():
     # Test MongoDB connection
@@ -271,6 +328,10 @@ def main():
     application.add_handler(CommandHandler("disconnect", disconnect))
     application.add_handler(CommandHandler("commands", commands))
     application.add_handler(CommandHandler("view", view))
+    # Add the new command handlers
+    application.add_handler(CommandHandler("send", send))
+    application.add_handler(CommandHandler("sendthis", send_this))
+ 
 
     # Fix here: update Filters to filters
     application.add_handler(MessageHandler(filters.TEXT | filters.PHOTO | filters.VIDEO, handle_message))
