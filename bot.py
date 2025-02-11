@@ -281,15 +281,36 @@ async def forward_message_to_user(update: Update, context: CallbackContext) -> N
     else:
         await update.message.reply_text("You are not authorized to forward messages.")
 # /set_channel command handler (to allow user to register a channel)
+
+# Function to handle user setting their channel
 async def set_channel(update: Update, context: CallbackContext) -> None:
     user_id = update.message.from_user.id
-    if len(context.args) < 1:
-        await update.message.reply_text("Please provide a channel ID using: /set_channel your_channel_id")
+    channel_id = update.message.text.split(" ")[1]  # Extract the channel ID
+
+    # Check if the user provided a channel ID
+    if not channel_id.startswith('@'):
+        await update.message.reply_text("❌ Please provide a valid channel ID starting with '@'. Example: /set_channel @your_channel_id")
         return
+
+    try:
+        # Attempt to send a test message to the channel
+        test_message = "Test message for channel connection"
+        response = await context.bot.send_message(chat_id=channel_id, text=test_message)
+        
+        # If the message is sent successfully, save the channel ID to the MongoDB
+        user_channels_collection.update_one(
+            {'user_id': user_id},
+            {'$set': {'channel_id': channel_id}},
+            upsert=True
+        )
+        
+        # Send success message
+        await update.message.reply_text(f"✅ Channel {channel_id} connected successfully!\nA test message was sent.")
     
-    channel_id = context.args[0]
-    add_user_channel(user_id, channel_id)
-    await update.message.reply_text(f"Your channel {channel_id} has been registered for forwarding messages.")
+    except Exception as e:
+        # If the message sending fails, inform the user
+        await update.message.reply_text(f"❌ Failed to connect to {channel_id}. Please make sure the bot has permission to send messages to this channel.")
+        logger.error(f"Error while sending test message to {channel_id}: {e}")
 
 
 # Main function to run the bot and the health check server
