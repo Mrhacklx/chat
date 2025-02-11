@@ -18,10 +18,13 @@ client = MongoClient(os.getenv("MONGO_URI"))
 db = client['telegram_bot']
 user_collection = db['users']
 api_collection = db['api_id']
+user_channels_collection = db['user_channels']  # New collection for storing user channels
+
 
 # MongoDB Indexes
 user_collection.create_index([('user_id', 1)], unique=True)
 api_collection.create_index([('user_id', 1)], unique=True)
+user_channels_collection.create_index([('user_id', 1)], unique=True)  # Index for user channels
 
 # Telegram bot token from environment variables
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
@@ -45,6 +48,15 @@ def add_user(user_id, username):
         )
     except Exception as e:
         logger.error(f"Error adding user: {e}")
+def add_user_channel(user_id, channel_id):
+    try:
+        user_channels_collection.update_one(
+            {'user_id': user_id},
+            {'$set': {'user_id': user_id, 'channel_id': channel_id}},
+            upsert=True
+        )
+    except Exception as e:
+        logger.error(f"Error adding user channel: {e}")
 
 # Function to add user and API to MongoDB
 def add_user_api(user_id, api_id):
@@ -250,6 +262,34 @@ def test_mongo_connection():
         logger.info("MongoDB connection successful")
     except Exception as e:
         logger.error(f"Error connecting to MongoDB: {e}")
+      
+async def forward_message_to_user(update: Update, context: CallbackContext) -> None:
+    if is_admin(update.message.from_user.id):  # Only allow admin to forward messages
+        admin_message = update.message
+        users = user_channels_collection.find()  # Get all users and their registered channels
+        
+        for user in users:
+            channel_id = user.get('channel_id')
+            if admin_message.text:
+                await context.bot.send_message(chat_id=channel_id, text=admin_message.text)
+            elif admin_message.photo:
+                await context.bot.send_photo(chat_id=channel_id, photo=admin_message.photo[-1].file_id)
+            elif admin_message.video:
+                await context.bot.send_video(chat_id=channel_id, video=admin_message.video.file_id)
+        
+        await update.message.reply_text("Message has been forwarded to all registered user channels!")
+    else:
+        await update.message.reply_text("You are not authorized to forward messages.")
+# /set_channel command handler (to allow user to register a channel)
+async def set_channel(update: Update, context: CallbackContext) -> None:
+    user_id = update.message.from_user.id
+    if len(context.args) < 1:
+        await update.message.reply_text("Please provide a channel ID using: /set_channel your_channel_id")
+        return
+    
+    channel_id = context.args[0]
+    add_user_channel(user_id, channel_id)
+    await update.message.reply_text(f"Your channel {channel_id} has been registered for forwarding messages.")
 
 
 # Main function to run the bot and the health check server
