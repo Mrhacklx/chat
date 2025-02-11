@@ -314,6 +314,7 @@ def main():
     application.add_handler(CommandHandler("disconnect", disconnect))
     application.add_handler(CommandHandler("commands", commands))
     application.add_handler(CommandHandler("view", view))
+    application.add_handler(CommandHandler("set_channel", set_channel))
     application.add_handler(MessageHandler(filters.TEXT | filters.PHOTO | filters.VIDEO, handle_message))
 
     # Start polling for updates from Telegram
