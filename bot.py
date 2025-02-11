@@ -287,10 +287,7 @@ async def set_channel(update: Update, context: CallbackContext) -> None:
     user_id = update.message.from_user.id
     channel_id = update.message.text.split(" ")[1]  # Extract the channel ID
 
-    # Check if the user provided a channel ID
-    if not channel_id.startswith('@'):
-        await update.message.reply_text("❌ Please provide a valid channel ID starting with '@'. Example: /set_channel @your_channel_id")
-        return
+
 
     # Function to check if the bot is admin and can send messages in the channel
     async def is_bot_admin_and_can_send(channel_id):
