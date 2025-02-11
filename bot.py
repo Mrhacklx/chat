@@ -292,25 +292,57 @@ async def set_channel(update: Update, context: CallbackContext) -> None:
         await update.message.reply_text("❌ Please provide a valid channel ID starting with '@'. Example: /set_channel @your_channel_id")
         return
 
+    # Function to check if the bot is admin and can send messages in the channel
+    async def is_bot_admin_and_can_send(channel_id):
+        try:
+            # First, check if it’s a public channel
+            if channel_id.startswith('@'):
+                # For public channels, check if the bot can send a test message
+                try:
+                    test_message = "Test message for channel connection"
+                    await context.bot.send_message(chat_id=channel_id, text=test_message)
+                    return True
+                except Exception as e:
+                    logger.error(f"Error sending test message to public channel {channel_id}: {e}")
+                    return False
+            else:
+                # If it's not a public channel, assume it's a private channel and check admin status
+                chat_member = await context.bot.get_chat_member(channel_id, context.bot.id)
+                if chat_member.status in ['member', 'administrator']:
+                    try:
+                        test_message = "Test message for private channel connection"
+                        await context.bot.send_message(chat_id=channel_id, text=test_message)
+                        return True
+                    except Exception as send_error:
+                        logger.error(f"Error sending test message to {channel_id}: {send_error}")
+                        return False
+                else:
+                    logger.error(f"Bot is not an admin in private channel {channel_id}")
+                    return False
+        except Exception as e:
+            logger.error(f"Error checking bot status in {channel_id}: {e}")
+            return False
+
+    # Check if the bot is admin and can send messages in the channel
+    if not await is_bot_admin_and_can_send(channel_id):
+        await update.message.reply_text(f"❌ The bot cannot send messages in the channel {channel_id}. Please ensure the bot is an admin and has message-sending permissions.")
+        return
+
     try:
-        # Attempt to send a test message to the channel
-        test_message = "Test message for channel connection"
-        response = await context.bot.send_message(chat_id=channel_id, text=test_message)
-        
-        # If the message is sent successfully, save the channel ID to the MongoDB
+        # If everything is fine, save the channel ID to MongoDB
         user_channels_collection.update_one(
             {'user_id': user_id},
             {'$set': {'channel_id': channel_id}},
             upsert=True
         )
-        
+
         # Send success message
         await update.message.reply_text(f"✅ Channel {channel_id} connected successfully!\nA test message was sent.")
     
     except Exception as e:
         # If the message sending fails, inform the user
         await update.message.reply_text(f"❌ Failed to connect to {channel_id}. Please make sure the bot has permission to send messages to this channel.")
-        logger.error(f"Error while sending test message to {channel_id}: {e}")
+        logger.error(f"Error while connecting to {channel_id}: {e}")
 
 
 # Main function to run the bot and the health check server
